@@ -248,12 +248,9 @@ class Grandmother(pg.sprite.Sprite):
         self.raw_image = None
         self.sound = None
 
-        #画像ファイル名と音声ファイル名をリストから取得
-        if Grandmother.next_index >= len(Grandmother.word_list):
-            Grandmother.next_index = 0
+# 画像ファイル名と音声ファイル名をリストから取得
         index = Grandmother.next_index
         Grandmother.next_index += 1
-
         word = Grandmother.word_list[index]
         voice = Grandmother.voice_list[index]
 
@@ -491,6 +488,7 @@ def main():
 
     background = PerspectiveBackground()
     story = StoryDisplay()
+    remaining_font = pg.font.SysFont("ms-gothic", 24)
 
     player = Player()
     kaguya = Kaguya()
@@ -533,6 +531,10 @@ def main():
         story.update() #あらすじを更新
         story.draw(screen)
 
+        remaining_count = max(0, len(Grandmother.word_list) - Grandmother.next_index)
+        remaining_text = remaining_font.render(f"残り言弾: {remaining_count}", True, (255, 255, 255))
+        screen.blit(remaining_text, (20, 140))
+
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 pg.quit()
@@ -541,7 +543,8 @@ def main():
             if event.type == pg.KEYDOWN:
                 # スタン中は弾を撃てないようにする
                 if event.key == pg.K_SPACE and player.stun_timer == 0:
-                    grannies.add(Grandmother(player.rect.center))
+                    if Grandmother.next_index < len(Grandmother.word_list):
+                        grannies.add(Grandmother(player.rect.center))
                 # 【なかむらさん担当】Sキーが押されたら操作キャラクターを変更
                 if event.key == pg.K_s:
                     player.switch_character()
