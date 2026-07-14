@@ -1,4 +1,5 @@
 # Back to the Moon
+![Back to the Moonゲーム画面](fig/screen_shot.png)
 
 ## 実行環境の必要条件
 * python >= 3.10
