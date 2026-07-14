@@ -135,13 +135,26 @@ class PerspectiveBackground:
                 pg.draw.line(screen, (50, 50, 50), (road_left, y), (road_left + current_road_width, y), 1)
 
 
+
 class Player(pg.sprite.Sprite):
-    """プレイヤー（おじいさん）"""
+    """プレイヤー（おじいさん / おばあさん）"""
     def __init__(self):
         super().__init__()
         self.normal_image = pg.image.load("fig/grandfather.png").convert_alpha()
-        self.normal_image = pg.transform.scale(self.nomal_image, (60, 60))
+        self.normal_image = pg.transform.scale(self.normal_image, (60, 60))
         
+        # キャラクターごとの性能パラメータ (色, 足の速さ)
+        self.features = {
+            "ojiisan": {"image_name": "grandfather.png", "speed": 5},
+            "obaasan": {"image_name": "grandmother.png", "speed": 15},
+        }
+        self.current_char = "ojiisan"  # 初期キャラはおじいさん
+        
+        # 選択されたキャラクターの見た目と速度を適用
+        self.apply_character()
+        
+        self.rect = self.image.get_rect()
+        self.rect.center = (WIDTH // 2, HEIGHT - 80)
         self.stun_image = self.normal_image.copy()
         self.stun_image.fill((255, 100, 100), special_flags=pg.BLEND_MULT)
 
@@ -153,7 +166,47 @@ class Player(pg.sprite.Sprite):
         # ★ろっく担当：スタン時間を管理する変数
         self.stun_timer = 0
 
+    def apply_character(self):
+        """現在のキャラクター設定に合わせて画像と速度を更新する"""
+        data = self.features[self.current_char]
+        image_name = data["image_name"]
+
+        candidates = [image_name, os.path.join("fig", image_name)]
+        loaded_image = None
+        for path in candidates:
+            if os.path.exists(path):
+                try:
+                    loaded_image = pg.image.load(path).convert_alpha()
+                    break
+                except Exception:
+                    loaded_image = None
+
+        if loaded_image is None:
+            loaded_image = get_dummy_surface(60, 60, (200, 200, 200))
+
+        self.normal_image = pg.transform.scale(loaded_image, (60, 60))
+        self.stun_image = self.normal_image.copy()
+        self.stun_image.fill((255, 100, 100), special_flags=pg.BLEND_MULT)
+        self.image = self.normal_image
+        self.speed = data["speed"]
+
+    def switch_character(self):
+        """Sキー入力で操作キャラクターを交互に切り替える"""
+        if self.current_char == "ojiisan":
+            self.current_char = "obaasan"
+        else:
+            self.current_char = "ojiisan"
+        
+        self.apply_character()
+
+    
+        
+        
+        
+
     def update(self, key_lst: list):
+        if key_lst[pg.K_LEFT]: self.rect.x -= self.speed
+        if key_lst[pg.K_RIGHT]: self.rect.x += self.speed
         # ★ろっく担当：スタン中は動けない
         if self.stun_timer > 0:
             self.stun_timer -= 1
@@ -329,7 +382,7 @@ class StoryDisplay:
             "Kaguya is about to go back to the moon.",
             "Grandfather must stop Kaguya from leaving Earth.",
             "Finish this game before the moon comes!",
-            "左右キー:移動、スペース:射撃"
+            "左右キー:移動、スペース:射撃、Sキー:キャラ変更"
         ]
         self.font = pg.font.SysFont("ms-gothic", 24)
         self.color = (255, 255, 255)
@@ -442,6 +495,7 @@ def main():
     kaguya = Kaguya()
 
     grannies = pg.sprite.Group()
+    
 
     # ★ろっく担当：隕石グループ
     meteors = pg.sprite.Group()
@@ -485,6 +539,11 @@ def main():
                 # スタン中は弾を撃てないようにする
                 if event.key == pg.K_SPACE and player.stun_timer == 0:
                     grannies.add(Grandmother(player.rect.center))
+                # 【なかむらさん担当】Sキーが押されたら操作キャラクターを変更
+                if event.key == pg.K_s:
+                    player.switch_character()
+
+                
 
         # ★ろっく担当：一定時間ごとに隕石を出す
         # 数字を小さくすると隕石が多くなる
