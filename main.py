@@ -350,7 +350,7 @@ class Kaguya(pg.sprite.Sprite):
         self.base_size = 20
         self.size_modifier = 1.0
         self.image = pg.transform.scale(self.original_image, (self.base_size, self.base_size))
-
+        self.stun_timer = 0
     def change_size(self, multiplier: float) -> None:
         """
         サイズ倍率を変更する（1.0より大きければ拡大、小さければ縮小）
@@ -359,6 +359,10 @@ class Kaguya(pg.sprite.Sprite):
         self.size_modifier *= multiplier
 
     def update(self):
+        
+        if self.stun_timer > 0:
+            self.stun_timer -= 1
+            return
         self.rect.x += self.vx
         if random.random() < 0.02:
             # スピードをランダムに変化させる
@@ -374,6 +378,9 @@ class Kaguya(pg.sprite.Sprite):
 
         if self.rect.left < 320 or self.rect.right > 460:
             self.vx *= -1
+    def stun(self, duration=120):
+        """隕石に当たった時、一定時間スタン状態にする"""
+        self.stun_timer = duration
 
 class StoryDisplay:
     """画面左上に物語のあらすじを流すクラス"""
@@ -548,7 +555,7 @@ def main():
         # ★ろっく担当：一定時間ごとに隕石を出す
         # 数字を小さくすると隕石が多くなる
         if tmr > 0 and tmr % 300 == 0:
-            for _ in range(3):
+            for _ in range(2):
                 meteors.add(Meteor())
 
         key_lst = pg.key.get_pressed()
@@ -569,11 +576,11 @@ def main():
                 sys.exit()
                 
         # ★ろっく担当：隕石がかぐや姫に当たったらゲームオーバー
-        if pg.sprite.spritecollide(kaguya, meteors, False):
+        if pg.sprite.spritecollide(kaguya, meteors, True):
             print("【ゲームオーバー】隕石がかぐや姫に当たってしまいました。")
-            pg.mixer.music.stop()
-            pg.quit()
-            sys.exit()    
+            kaguya.stun(120)
+            
+                
 
         # ★ろっく担当：隕石がおじいさんに当たったらスタン
         if pg.sprite.spritecollide(player, meteors, True):
