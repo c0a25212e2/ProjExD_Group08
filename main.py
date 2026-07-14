@@ -24,6 +24,8 @@ class PerspectiveBackground:
 
         self.cx = WIDTH // 2
         self.cy = HEIGHT // 2 + 80  
+        # 地平線（虹の道の始まり）のY座標
+        self.horizon_y = int(self.cy)
         
         # 星の初期設定（中心を下げたので、新しい中心から放射状に広がる）
         self.stars = []
