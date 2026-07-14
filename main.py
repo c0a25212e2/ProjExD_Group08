@@ -135,12 +135,46 @@ class PerspectiveBackground:
                 pg.draw.line(screen, (50, 50, 50), (road_left, y), (road_left + current_road_width, y), 1)
 
 
+
 class Player(pg.sprite.Sprite):
-    """プレイヤー（おじいさん）"""
+    """プレイヤー（おじいさん / おばあさん）"""
     def __init__(self):
         super().__init__()
-        self.normal_image = pg.image.load("fig/grandfather.png").convert_alpha()
-        self.normal_image = pg.transform.scale(self.nomal_image, (60, 60))
+        #self.normal_image = pg.image.load("fig/grandfather.png").convert_alpha()
+        #self.normal_image = pg.transform.scale(self.nomal_image, (60, 60))
+        
+        # キャラクターごとの性能パラメータ (色, 足の速さ)
+        self.features = {
+            "ojiisan": {"color": (0, 255, 0), "speed": 10},     # おじいさん: 緑色、速度10
+            "obaasan": {"color": (255, 105, 180), "speed": 15}  # おばあさん: ピンク、速度15（足が速い）
+        }
+        self.current_char = "ojiisan"  # 初期キャラはおじいさん
+        
+        # 選択されたキャラクターの見た目と速度を適用
+        self.apply_character()
+        
+        self.rect = self.image.get_rect()
+        self.rect.center = (WIDTH // 2, HEIGHT - 80)
+
+    def apply_character(self):
+        """現在のキャラクター設定に合わせて画像と速度を更新する"""
+        data = self.features[self.current_char]
+        self.image = get_dummy_surface(60, 60, data["color"])
+        self.speed = data["speed"]
+
+    def switch_character(self):
+        """Sキー入力で操作キャラクターを交互に切り替える"""
+        if self.current_char == "ojiisan":
+            self.current_char = "obaasan"
+        else:
+            self.current_char = "ojiisan"
+        
+        self.apply_character()
+
+    def update(self, key_lst):
+        # 左右の移動速度(self.speed)はキャラクターごとに変化します
+        if key_lst[pg.K_LEFT]: self.rect.x -= self.speed
+        if key_lst[pg.K_RIGHT]: self.rect.x += self.speed
         
         self.stun_image = self.normal_image.copy()
         self.stun_image.fill((255, 100, 100), special_flags=pg.BLEND_MULT)
@@ -442,6 +476,7 @@ def main():
     kaguya = Kaguya()
 
     grannies = pg.sprite.Group()
+    
 
     # ★ろっく担当：隕石グループ
     meteors = pg.sprite.Group()
@@ -485,6 +520,11 @@ def main():
                 # スタン中は弾を撃てないようにする
                 if event.key == pg.K_SPACE and player.stun_timer == 0:
                     grannies.add(Grandmother(player.rect.center))
+                # 【なかむらさん担当】Sキーが押されたら操作キャラクターを変更
+                if event.key == pg.K_s:
+                    player.switch_character()
+
+                
 
         # ★ろっく担当：一定時間ごとに隕石を出す
         # 数字を小さくすると隕石が多くなる
